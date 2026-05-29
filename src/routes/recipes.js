@@ -36,7 +36,7 @@ router.get("/categories",  getCategories);         // List kategori
 router.get("/popular",     getPopularRecipes);     // Resep populer
 router.get("/random",      getRandomRecipes);      // Resep acak (discovery)
 router.get("/similar",     getSimilarRecipes);     // Resep mirip (detail page)
-router.get("/recommend",   optionalAuth, getRecommendations); // ⭐ Rekomendasi utama
+router.get("/recommend",   optionalAuth, getRecommendations); // Rekomendasi utama
 router.get("/",            getAllRecipes);          // List semua resep
 router.get("/:id",         optionalAuth, getRecipeById); // Detail resep
 
