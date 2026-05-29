@@ -17,6 +17,7 @@ const pantryItemSchema = new mongoose.Schema(
     expiryDate: { type: Date, default: null },
     addedAt: { type: Date, default: Date.now },
     notes: { type: String, trim: true, default: "" },
+    image: { type: String, default: null },
   },
   { _id: true }
 );

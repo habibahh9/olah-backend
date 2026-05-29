@@ -51,11 +51,11 @@ const mapRecipeData = (raw) => {
 };
 
 const seedRecipes = async () => {
-  console.log("\n🌱 OLAH - Seed Script dimulai...");
+  console.log("\nOLAH - Seed Script dimulai...");
   console.log("=".repeat(50));
 
   if (!fs.existsSync(recipePath)) {
-    console.error(`❌ File tidak ditemukan: ${recipePath}`);
+    console.error(`File tidak ditemukan: ${recipePath}`);
     console.log("   Letakkan recipe_metadata.json di root folder backend.");
     process.exit(1);
   }
@@ -64,7 +64,7 @@ const seedRecipes = async () => {
   try {
     rawData = fs.readFileSync(recipePath, "utf-8");
   } catch (err) {
-    console.error(`❌ Gagal membaca file: ${err.message}`);
+    console.error(`Gagal membaca file: ${err.message}`);
     process.exit(1);
   }
 
@@ -81,21 +81,21 @@ const seedRecipes = async () => {
       recipes = Object.values(parsed);
     }
   } catch (err) {
-    console.error(`❌ Gagal parse JSON: ${err.message}`);
+    console.error(`Gagal parse JSON: ${err.message}`);
     process.exit(1);
   }
 
-  console.log(`📄 Ditemukan ${recipes.length} resep di file.`);
+  console.log(`Ditemukan ${recipes.length} resep di file.`);
   await connectDB();
 
   // Opsional reset
   if (process.env.RESET === "true") {
     await Recipe.deleteMany({});
-    console.log("🗑️  Database dikosongkan (RESET=true).");
+    console.log("Database dikosongkan (RESET=true).");
   }
 
   const existingCount = await Recipe.countDocuments();
-  console.log(`📦 Resep di database saat ini: ${existingCount}`);
+  console.log(`Resep di database saat ini: ${existingCount}`);
 
   let inserted = 0;
   let updated = 0;
@@ -105,7 +105,7 @@ const seedRecipes = async () => {
   for (const raw of recipes) {
     try {
       if (!raw.recipe_id && !raw.recipeId) {
-        console.warn(`⚠️  Resep tanpa recipe_id dilewati: ${JSON.stringify(raw).slice(0, 80)}`);
+        console.warn(`Resep tanpa recipe_id dilewati: ${JSON.stringify(raw).slice(0, 80)}`);
         failed++;
         continue;
       }
@@ -118,7 +118,7 @@ const seedRecipes = async () => {
         },
       });
     } catch (err) {
-      console.warn(`⚠️  Gagal proses "${raw.recipe_name}": ${err.message}`);
+      console.warn(`Gagal proses "${raw.recipe_name}": ${err.message}`);
       failed++;
     }
   }
@@ -134,19 +134,19 @@ const seedRecipes = async () => {
   }
 
   console.log("\n");
-  console.log("✅ Seed selesai!");
-  console.log(`   📥 Inserted  : ${inserted}`);
-  console.log(`   ♻️  Updated   : ${updated}`);
-  console.log(`   ⚠️  Failed    : ${failed}`);
-  console.log(`   📦 Total DB  : ${await Recipe.countDocuments()}`);
+  console.log("Seed selesai!");
+  console.log(`Inserted  : ${inserted}`);
+  console.log(`Updated   : ${updated}`);
+  console.log(`Failed    : ${failed}`);
+  console.log(`Total DB  : ${await Recipe.countDocuments()}`);
   console.log("=".repeat(50));
 
   await mongoose.disconnect();
-  console.log("🔌 MongoDB disconnected.\n");
+  console.log("MongoDB disconnected.\n");
   process.exit(0);
 };
 
 seedRecipes().catch((err) => {
-  console.error("❌ Seed gagal:", err.message);
+  console.error("Seed gagal:", err.message);
   process.exit(1);
 });

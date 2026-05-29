@@ -1,4 +1,8 @@
-require("dotenv").config();
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
+require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -12,6 +16,7 @@ const recipeRoutes = require("./src/routes/recipes");
 const pantryRoutes = require("./src/routes/pantry");
 const shoppingListRoutes = require("./src/routes/shoppingList");
 const userRoutes = require("./src/routes/users");
+const articleRoutes = require("./src/routes/articles");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -68,6 +73,8 @@ const authLimiter = rateLimit({
   },
 });
 
+
+
 // ── General Middleware ────────────────────────────────────────────────────────
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -82,7 +89,7 @@ if (process.env.NODE_ENV === "development") {
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "🍳 OLAH API is running!",
+    message: "OLAH API is running!",
     version: "1.0.0",
     team: "CC26-PSU127",
     endpoints: {
@@ -111,6 +118,7 @@ app.use("/api/recipes", recipeRoutes);
 app.use("/api/pantry", pantryRoutes);
 app.use("/api/shopping-list", shoppingListRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/articles", articleRoutes);
 
 // ── 404 Handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -158,10 +166,10 @@ app.use((err, req, res, next) => {
 // ── Start Server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log("\n" + "=".repeat(50));
-  console.log(`🍳  OLAH Backend running on port ${PORT}`);
-  console.log(`🌍  Environment  : ${process.env.NODE_ENV || "development"}`);
-  console.log(`📡  API Base URL : http://localhost:${PORT}/api`);
-  console.log(`🔑  Health Check : http://localhost:${PORT}/api/health`);
+  console.log(`OLAH Backend running on port ${PORT}`);
+  console.log(`Environment  : ${process.env.NODE_ENV || "development"}`);
+  console.log(`API Base URL : http://localhost:${PORT}/api`);
+  console.log(`Health Check : http://localhost:${PORT}/api/health`);
   console.log("=".repeat(50) + "\n");
 });
 

@@ -90,6 +90,7 @@ const addToPantry = async (req, res) => {
         unit: item.unit || null,
         expiryDate: item.expiryDate ? new Date(item.expiryDate) : null,
         notes: item.notes || "",
+        image: item.image || null, // ← tambah ini
       };
 
       user.pantry.push(newItem);
