@@ -1,5 +1,7 @@
 const User = require("../models/User");
 const Recipe = require("../models/Recipe");
+const crypto = require("crypto");
+const { sendOtpEmail } = require("../utils/mailer");
 
 // ── GET /api/users/profile ────────────────────────────────────────────────────
 const getProfile = async (req, res) => {
@@ -218,32 +220,142 @@ const markAsCooked = async (req, res) => {
   }
 };
 
-const bcrypt = require("bcryptjs");
-
-// ── PUT /api/users/change-password ──────────────────────────────────────────
-const changePassword = async (req, res) => {
+// ── POST /api/users/request-otp ──────────────────────────────────────────────
+const requestOtp = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
- 
-    const user = await User.findById(req.user._id).select("+password");
-
+    const user = await User.findById(req.user._id).select("+passwordResetOtp");
     if (!user) {
       return res.status(404).json({ success: false, message: "User tidak ditemukan." });
     }
-    const isMatch = await user.comparePassword(currentPassword);
-    
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: "Kata sandi saat ini salah." });
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 menit
+
+    user.passwordResetOtp = crypto.createHash("sha256").update(otp).digest("hex");
+    user.passwordResetOtpExpiry = expiry;
+    await user.save();
+
+    await sendOtpEmail(user.email, otp);
+
+    res.status(200).json({
+      success: true,
+      message: `OTP telah dikirim ke ${user.email}`,
+    });
+  } catch (error) {
+    console.error("requestOtp error:", error);
+    res.status(500).json({ success: false, message: "Gagal mengirim OTP." });
+  }
+};
+
+// ── PUT /api/users/change-password ───────────────────────────────────────────
+const changePassword = async (req, res) => {
+  try {
+    const { otp, newPassword } = req.body;
+
+    if (!otp || !newPassword) {
+      return res.status(400).json({ success: false, message: "OTP dan password baru wajib diisi." });
     }
 
+    const user = await User.findById(req.user._id).select("+password +passwordResetOtp");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User tidak ditemukan." });
+    }
+
+    // Cek apakah OTP sudah expired
+    if (!user.passwordResetOtpExpiry || user.passwordResetOtpExpiry < new Date()) {
+      return res.status(400).json({ success: false, message: "OTP sudah kadaluarsa. Minta OTP baru." });
+    }
+
+    // Verifikasi OTP
+    const hashedInput = crypto.createHash("sha256").update(otp).digest("hex");
+    if (hashedInput !== user.passwordResetOtp) {
+      return res.status(400).json({ success: false, message: "OTP tidak valid." });
+    }
+
+    // Simpan password baru (pre-save hook akan hash otomatis)
     user.password = newPassword;
-    
+    user.passwordResetOtp = null;
+    user.passwordResetOtpExpiry = null;
     await user.save();
 
     res.status(200).json({ success: true, message: "Kata sandi berhasil diperbarui." });
   } catch (error) {
     console.error("changePassword error:", error);
-    res.status(500).json({ success: false, message: "Terjadi kesalahan server saat mengubah sandi." });
+    res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
+  }
+};
+
+// POST /api/auth/forgot-password
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // Selalu response sukses agar tidak bocorkan info email terdaftar atau tidak
+    if (!user) {
+      return res.status(200).json({ success: true, message: "Jika email terdaftar, OTP telah dikirim." });
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    user.passwordResetOtp = crypto.createHash("sha256").update(otp).digest("hex");
+    user.passwordResetOtpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 menit
+    await user.save();
+
+    await sendOtpEmail(user.email, otp);
+
+    res.status(200).json({ success: true, message: "OTP telah dikirim ke email." });
+  } catch (error) {
+    console.error("forgotPassword error:", error);
+    res.status(500).json({ success: false, message: "Gagal mengirim OTP." });
+  }
+};
+
+// POST /api/auth/verify-otp
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+passwordResetOtp");
+
+    if (!user || !user.passwordResetOtpExpiry || user.passwordResetOtpExpiry < new Date()) {
+      return res.status(400).json({ success: false, message: "OTP sudah kadaluarsa." });
+    }
+
+    const hashedInput = crypto.createHash("sha256").update(otp).digest("hex");
+    if (hashedInput !== user.passwordResetOtp) {
+      return res.status(400).json({ success: false, message: "Kode OTP salah atau sudah kadaluarsa." });
+    }
+
+    res.status(200).json({ success: true, message: "OTP valid." });
+  } catch (error) {
+    console.error("verifyOtp error:", error);
+    res.status(500).json({ success: false, message: "Gagal verifikasi OTP." });
+  }
+};
+
+// POST /api/auth/reset-password
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+password +passwordResetOtp");
+
+    if (!user || !user.passwordResetOtpExpiry || user.passwordResetOtpExpiry < new Date()) {
+      return res.status(400).json({ success: false, message: "OTP sudah kadaluarsa. Ulangi prosesnya." });
+    }
+
+    const hashedInput = crypto.createHash("sha256").update(otp).digest("hex");
+    if (hashedInput !== user.passwordResetOtp) {
+      return res.status(400).json({ success: false, message: "OTP tidak valid." });
+    }
+
+    user.password = newPassword; // pre-save hook otomatis hash
+    user.passwordResetOtp = null;
+    user.passwordResetOtpExpiry = null;
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Kata sandi berhasil direset." });
+  } catch (error) {
+    console.error("resetPassword error:", error);
+    res.status(500).json({ success: false, message: "Gagal mereset kata sandi." });
   }
 };
 
@@ -255,5 +367,9 @@ module.exports = {
   addHistory,
   getLovedRecipes,
   markAsCooked,
+  requestOtp,
   changePassword,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 };

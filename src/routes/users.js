@@ -10,6 +10,7 @@ const {
   getLovedRecipes,
   markAsCooked,
   changePassword, 
+  requestOtp,
 } = require("../controllers/userController");
 
 const { protect } = require("../middleware/auth");
@@ -19,7 +20,7 @@ router.use(protect);
 
 router.get("/profile", getProfile);
 router.put("/profile", updateProfile);
-
+router.post("/request-otp", requestOtp); 
 router.put("/change-password", changePassword);
 
 router.get("/history", getHistory);

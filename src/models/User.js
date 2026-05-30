@@ -96,6 +96,16 @@ const userSchema = new mongoose.Schema(
       dietaryRestrictions: [String],
       allergies:           [String],
     },
+
+    passwordResetOtp: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    passwordResetOtpExpiry: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
