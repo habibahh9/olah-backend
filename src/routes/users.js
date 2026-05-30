@@ -6,6 +6,7 @@ const {
   updateProfile,
   getHistory,
   clearHistory,
+  addHistory,
   getLovedRecipes,
   markAsCooked,
   changePassword, 
@@ -23,6 +24,7 @@ router.put("/change-password", changePassword);
 
 router.get("/history", getHistory);
 router.delete("/history", clearHistory);
+router.post("/history", addHistory); 
 router.patch("/history/:historyId/cooked", markAsCooked);
 router.get("/loved-recipes", getLovedRecipes);
 router.get("/notifications", getNotifications);

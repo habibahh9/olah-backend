@@ -92,7 +92,7 @@ const getHistory = async (req, res) => {
       .select("history")
       .populate({
         path: "history.recipeId",
-        select: "recipeName category ingredients totalIngredients loveCount imageUrl",
+        select: "recipeName category ingredients totalIngredients cookTime servings loveCount imageUrl",
       });
 
     if (!user) {
@@ -119,6 +119,40 @@ const getHistory = async (req, res) => {
   } catch (error) {
     console.error("getHistory error:", error);
     res.status(500).json({ success: false, message: "Gagal mengambil riwayat." });
+  }
+};
+
+// ── POST /api/users/history ───────────────────────────────────────────────────
+// Tambah resep ke riwayat dengan cookedAt timestamp
+const addHistory = async (req, res) => {
+  try {
+    const { recipeId } = req.body;
+    if (!recipeId) {
+      return res.status(400).json({ success: false, message: "recipeId wajib diisi." });
+    }
+
+    const recipe = await Recipe.findById(recipeId);
+    if (!recipe) {
+      return res.status(404).json({ success: false, message: "Resep tidak ditemukan." });
+    }
+
+    const user = await User.findById(req.user._id);
+    user.history.push({
+      recipeId,
+      recipeName: recipe.recipeName,
+      cooked: true,
+      cookedAt: new Date(),   // ← INI yang penting
+    });
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Riwayat berhasil ditambahkan.",
+      data: { historyItem: user.history[user.history.length - 1] },
+    });
+  } catch (error) {
+    console.error("addHistory error:", error);
+    res.status(500).json({ success: false, message: "Gagal menambahkan riwayat." });
   }
 };
 
@@ -218,6 +252,7 @@ module.exports = {
   updateProfile,
   getHistory,
   clearHistory,
+  addHistory,
   getLovedRecipes,
   markAsCooked,
   changePassword,
