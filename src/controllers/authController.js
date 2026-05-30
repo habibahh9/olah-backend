@@ -11,6 +11,7 @@ const formatUser = (user) => ({
   pantryCount: user.pantry?.length || 0,
   preferences: user.preferences,
   createdAt: user.createdAt,
+  lovedRecipes: (user.lovedRecipes || []).map((id) => String(id)),
 });
 
 // ── POST /api/auth/register ───────────────────────────────────────────────────
