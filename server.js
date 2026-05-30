@@ -16,7 +16,6 @@ const recipeRoutes = require("./src/routes/recipes");
 const pantryRoutes = require("./src/routes/pantry");
 const shoppingListRoutes = require("./src/routes/shoppingList");
 const userRoutes = require("./src/routes/users");
-const articleRoutes = require("./src/routes/articles");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -118,7 +117,6 @@ app.use("/api/recipes", recipeRoutes);
 app.use("/api/pantry", pantryRoutes);
 app.use("/api/shopping-list", shoppingListRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/articles", articleRoutes);
 
 // ── 404 Handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {

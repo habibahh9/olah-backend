@@ -57,7 +57,7 @@ const getAllRecipes = async (req, res) => {
 
     const sortOptions = { [sortBy]: order === "asc" ? 1 : -1 };
     const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+    const limitNum = Math.min(500, Math.max(1, parseInt(limit)));
     const skip = (pageNum - 1) * limitNum;
 
     const [recipes, total] = await Promise.all([
@@ -554,8 +554,6 @@ const toggleLoveRecipe = async (req, res) => {
   }
 };
 
-// ── GET /api/recipes/ai-status ────────────────────────────────────────────────
-// Endpoint untuk frontend cek apakah AI model tersedia
 const getAIStatus = async (req, res) => {
   try {
     const { ok, data } = await aiClient.checkHealth();
@@ -573,6 +571,86 @@ const getAIStatus = async (req, res) => {
       data: { aiAvailable: false, aiUrl: aiClient.AI_BASE_URL, aiHealth: null },
     });
   }
+  // ← tutup getAIStatus di sini, tidak ada lagi kode setelahnya
+};
+
+// ── POST /api/recipes/:id/selesai ─────────────────────────────────────────────
+const selesaiMasak = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const recipe = await Recipe.findById(id).select("recipeName ingredients");
+    if (!recipe) {
+      return res.status(404).json({ success: false, message: "Resep tidak ditemukan." });
+    }
+
+    const user = await User.findById(req.user._id).select("pantry history");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User tidak ditemukan." });
+    }
+
+    const updatedItems = [];
+    const removedItems = [];
+
+    for (const ingredient of recipe.ingredients) {
+      const ingredientName =
+        typeof ingredient === "string"
+          ? ingredient.toLowerCase().trim()
+          : (ingredient.name || "").toLowerCase().trim();
+
+      if (!ingredientName) continue;
+
+      const pantryItem = user.pantry.find(
+        (p) =>
+          p.name === ingredientName ||
+          p.aliases.includes(ingredientName)
+      );
+
+      if (!pantryItem) continue;
+
+      const usedQty =
+        typeof ingredient === "object" && ingredient.quantity
+          ? Number(ingredient.quantity)
+          : 1;
+
+      const currentQty = Number(pantryItem.quantity) || 0;
+      const remaining = currentQty - usedQty;
+
+      if (remaining <= 0) {
+        removedItems.push(pantryItem.name);
+        user.pantry.pull(pantryItem._id);
+      } else {
+        pantryItem.quantity = remaining;
+        updatedItems.push({ name: pantryItem.name, remaining });
+      }
+    }
+
+    user.history.push({
+      recipeId: recipe._id,
+      recipeName: recipe.recipeName,
+      cooked: true,
+      cookedAt: new Date(),
+    });
+
+    if (user.history.length > 50) {
+      user.history = user.history.slice(-50);
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Selamat! Resep selesai dimasak. Stok bahan telah diperbarui.",
+      data: {
+        recipeName: recipe.recipeName,
+        pantryUpdated: updatedItems,
+        pantryRemoved: removedItems,
+      },
+    });
+  } catch (error) {
+    console.error("selesaiMasak error:", error);
+    res.status(500).json({ success: false, message: "Gagal memproses selesai masak." });
+  }
 };
 
 module.exports = {
@@ -585,4 +663,5 @@ module.exports = {
   getRecipeById,
   toggleLoveRecipe,
   getAIStatus,
+  selesaiMasak,
 };

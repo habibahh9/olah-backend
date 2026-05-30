@@ -10,6 +10,7 @@ const {
   getRecipeById,
   toggleLoveRecipe,
   getAIStatus,
+  selesaiMasak,
 } = require("../controllers/recipeController");
 const { protect } = require("../middleware/auth");
 

@@ -130,7 +130,7 @@ const seedRecipes = async () => {
     const result = await Recipe.bulkWrite(batch, { ordered: false });
     inserted += result.upsertedCount || 0;
     updated += result.modifiedCount || 0;
-    process.stdout.write(`\r   ⏳ Memproses ${Math.min(i + BATCH, operations.length)}/${operations.length}...`);
+    process.stdout.write(`\r   Memproses ${Math.min(i + BATCH, operations.length)}/${operations.length}...`);
   }
 
   console.log("\n");

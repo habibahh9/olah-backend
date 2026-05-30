@@ -10,14 +10,23 @@ const pantryItemSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
-    // Alias / sinonim bahan (e.g. "telor" untuk "telur")
     aliases: [{ type: String, lowercase: true, trim: true }],
     quantity: { type: Number, default: null },
-    unit: { type: String, trim: true, default: null }, // gram, ml, buah, sdm, dll
+    unit:     { type: String, trim: true, default: null },
     expiryDate: { type: Date, default: null },
-    addedAt: { type: Date, default: Date.now },
-    notes: { type: String, trim: true, default: "" },
-    image: { type: String, default: null },
+    addedAt:    { type: Date, default: Date.now },
+    notes:      { type: String, trim: true, default: "" },
+    image:      { type: String, default: null },
+
+    status: {
+      type: String,
+      enum: ["active", "used", "expired"],
+      default: "active",
+    },
+    // Kapan bahan ditandai sebagai dipakai
+    usedAt: { type: Date, default: null },
+    // Kapan bahan ditandai sebagai expired (oleh cron/endpoint)
+    expiredAt: { type: Date, default: null },
   },
   { _id: true }
 );
@@ -25,11 +34,11 @@ const pantryItemSchema = new mongoose.Schema(
 // ── Sub-schema: Daftar belanja ────────────────────────────────────────────────
 const shoppingItemSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    name:     { type: String, required: true, trim: true },
     quantity: { type: Number, default: null },
-    unit: { type: String, trim: true, default: null },
-    checked: { type: Boolean, default: false },
-    addedAt: { type: Date, default: Date.now },
+    unit:     { type: String, trim: true, default: null },
+    checked:  { type: Boolean, default: false },
+    addedAt:  { type: Date, default: Date.now },
   },
   { _id: true }
 );
@@ -43,9 +52,9 @@ const historyItemSchema = new mongoose.Schema(
       required: true,
     },
     recipeName: { type: String },
-    viewedAt: { type: Date, default: Date.now },
-    cooked: { type: Boolean, default: false },
-    cookedAt: { type: Date, default: null },
+    viewedAt:   { type: Date, default: Date.now },
+    cooked:     { type: Boolean, default: false },
+    cookedAt:   { type: Date, default: null },
   },
   { _id: true }
 );
@@ -72,45 +81,28 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password wajib diisi"],
       minlength: [6, "Password minimal 6 karakter"],
-      select: false, // tidak dikembalikan secara default
+      select: false,
     },
     avatar: { type: String, default: null },
-    bio: { type: String, trim: true, default: "" },
+    bio:    { type: String, trim: true, default: "" },
 
-    // Bahan yang ada di dapur
-    pantry: [pantryItemSchema],
-
-    // Daftar belanja
+    pantry:       [pantryItemSchema],
     shoppingList: [shoppingItemSchema],
+    history:      { type: [historyItemSchema], default: [] },
 
-    // Riwayat resep
-    history: {
-      type: [historyItemSchema],
-      default: [],
-    },
+    lovedRecipes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Recipe" }],
 
-    // Resep yang di-love
-    lovedRecipes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Recipe",
-      },
-    ],
-
-    // Preferensi pengguna (opsional, untuk personalisasi lebih lanjut)
     preferences: {
-      dietaryRestrictions: [String], // vegetarian, vegan, halal, dll
-      allergies: [String],
+      dietaryRestrictions: [String],
+      allergies:           [String],
     },
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
+    toJSON:   { virtuals: true },
     toObject: { virtuals: true },
   }
 );
-
-// ── Indexes ───────────────────────────────────────────────────────────────────
 
 // ── Hash password sebelum disimpan ───────────────────────────────────────────
 userSchema.pre("save", async function (next) {
@@ -125,9 +117,9 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// ── Virtual: jumlah bahan di pantry ──────────────────────────────────────────
+// ── Virtual: jumlah bahan aktif di pantry ─────────────────────────────────────
 userSchema.virtual("pantryCount").get(function () {
-  return this.pantry.length;
+  return this.pantry.filter((p) => p.status === "active").length;
 });
 
 module.exports = mongoose.model("User", userSchema);

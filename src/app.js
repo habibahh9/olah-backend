@@ -12,7 +12,7 @@ app.use(express.json());
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ message: '🍳 Olah API is running!' });
+  res.json({ message: 'Olah API is running!' });
 });
 
 export default app;
