@@ -198,7 +198,7 @@ const getRecommendations = async (req, res) => {
     }
 
     const allRecipes = await Recipe.find(recipeFilter).select(
-      "recipeId recipeName category ingredients ingredientsNormalized totalIngredients loveCount url imageUrl steps"
+      "recipeId recipeName category ingredients ingredientsCleaned ingredientsNormalized totalIngredients loveCount url imageUrl steps"
     );
 
     if (allRecipes.length === 0) {
@@ -229,6 +229,7 @@ const getRecommendations = async (req, res) => {
             recipeName: recipe.recipeName,
             category: recipe.category,
             ingredients: recipe.ingredients,
+            ingredientsCleaned: recipe.ingredientsCleaned || "",
             totalIngredients: recipe.totalIngredients,
             loveCount: recipe.loveCount,
             url: recipe.url,
@@ -259,7 +260,7 @@ const getRecommendations = async (req, res) => {
           const recipeIngs = recipe.ingredientsNormalized?.length > 0
             ? recipe.ingredientsNormalized : recipe.ingredients;
           const matchInfo = calculateMatchScore(userIngredients, recipeIngs);
-          return { recipe: { id: recipe._id, recipeId: recipe.recipeId, recipeName: recipe.recipeName, category: recipe.category, ingredients: recipe.ingredients, totalIngredients: recipe.totalIngredients, loveCount: recipe.loveCount, url: recipe.url }, matchInfo };
+          return { recipe: { id: recipe._id, recipeId: recipe.recipeId, recipeName: recipe.recipeName, category: recipe.category, ingredients: recipe.ingredients, ingredientsCleaned: recipe.ingredientsCleaned || "", totalIngredients: recipe.totalIngredients, loveCount: recipe.loveCount, url: recipe.url }, matchInfo };
         })
         .sort((a, b) => b.matchInfo.matchScore - a.matchInfo.matchScore)
         .slice(0, 5);
