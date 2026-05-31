@@ -33,7 +33,7 @@ const corsOptions = {
       process.env.CLIENT_URL || "http://localhost:5173",
       "http://localhost:3000",
       "http://localhost:5174",
-      "https://olah-frontend.vercel.app",
+      "https://olah-api.vercel.app",
       // Tambahkan URL Vercel deployment nanti
     ];
 
