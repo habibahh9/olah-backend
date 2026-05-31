@@ -2,6 +2,7 @@
   "name": "olah-backend",
   "version": "1.0.0",
   "description": "Backend API for OLAH - Recipe Recommendation App (CC26-PSU127)",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
