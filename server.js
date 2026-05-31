@@ -19,6 +19,7 @@ const userRoutes = require("./src/routes/users");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+app.set("trust proxy", 1);
 
 // ── Koneksi Database ──────────────────────────────────────────────────────────
 connectDB();
@@ -55,6 +56,9 @@ const limiter = rateLimit({
   max: 200,                  // maks 200 request per windowMs per IP
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    xForwardedForHeader: false,
+  },
   message: {
     success: false,
     message: "Terlalu banyak request. Coba lagi dalam 15 menit.",
