@@ -15,6 +15,19 @@ app.use(cors({
 
 app.use(express.json());
 
+// ── Routes ──────────────────────────────────────────────
+const authRoutes = require('./routes/auth');
+const pantryRoutes = require('./routes/pantry');
+const recipeRoutes = require('./routes/recipes');
+const shoppingListRoutes = require('./routes/shoppingList');
+const userRoutes = require('./routes/users');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/pantry', pantryRoutes);
+app.use('/api/recipes', recipeRoutes);
+app.use('/api/shopping-list', shoppingListRoutes);
+app.use('/api/users', userRoutes);
+
 app.get('/', (req, res) => {
   res.json({ message: 'Olah API is running!' });
 });
