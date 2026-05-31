@@ -97,6 +97,11 @@ const userSchema = new mongoose.Schema(
       allergies:           [String],
     },
 
+    dismissedNotifications: {
+      type: [String],
+      default: [],
+    },
+
     passwordResetOtp: {
       type: String,
       default: null,

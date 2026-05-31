@@ -43,5 +43,6 @@ router.get("/:id",         optionalAuth, getRecipeById); // Detail resep
 
 // ── Protected Routes ──────────────────────────────────────────────────────────
 router.post("/:id/love",   protect, toggleLoveRecipe); // Toggle love
+router.post("/:id/selesai", protect, selesaiMasak);     // ← tambahkan ini
 
 module.exports = router;

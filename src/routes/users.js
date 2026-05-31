@@ -14,7 +14,11 @@ const {
 } = require("../controllers/userController");
 
 const { protect } = require("../middleware/auth");
-const { getNotifications } = require("../controllers/notificationController");
+const {
+  getNotifications,
+  dismissNotification, 
+  resetDismissed,     
+} = require("../controllers/notificationController");
 
 router.use(protect);
 
@@ -29,5 +33,7 @@ router.post("/history", addHistory);
 router.patch("/history/:historyId/cooked", markAsCooked);
 router.get("/loved-recipes", getLovedRecipes);
 router.get("/notifications", getNotifications);
+router.post("/notifications/dismiss", dismissNotification); 
+router.delete("/notifications/dismiss", resetDismissed);
 
 module.exports = router;
