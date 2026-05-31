@@ -1,13 +1,19 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const connectDB = require('./config/db');
 
 dotenv.config();
+
+connectDB();
 
 const app = express();
 
 app.use(cors({
-  origin: ['https://olah-frontend.vercel.app', 'http://localhost:5173'],
+  origin: [
+    'https://olah-api.vercel.app',
+    'http://localhost:5173'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

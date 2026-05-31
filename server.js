@@ -34,7 +34,6 @@ const corsOptions = {
       "http://localhost:3000",
       "http://localhost:5174",
       "https://olah-api.vercel.app",
-      // Tambahkan URL Vercel deployment nanti
     ];
 
     // Izinkan request tanpa origin (Postman, server-to-server)
