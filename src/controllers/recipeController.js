@@ -493,18 +493,6 @@ const getRecipeById = async (req, res) => {
       return res.status(404).json({ success: false, message: "Resep tidak ditemukan." });
     }
 
-    // Tambahkan ke history jika user login
-    if (req.user) {
-      await User.findByIdAndUpdate(req.user._id, {
-        $push: {
-          history: {
-            $each: [{ recipeId: recipe._id, recipeName: recipe.recipeName }],
-            $slice: -50,
-          },
-        },
-      });
-    }
-
     let isLoved = false;
     if (req.user) {
       const user = await User.findById(req.user._id).select("lovedRecipes");

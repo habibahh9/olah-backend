@@ -139,11 +139,30 @@ const addHistory = async (req, res) => {
     }
 
     const user = await User.findById(req.user._id);
+
+    // ── Cek duplikat: resep yang sama dalam 1 menit terakhir ──
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    const isDuplicate = user.history.some(
+      (h) =>
+        String(h.recipeId) === String(recipeId) &&
+        h.cookedAt &&
+        new Date(h.cookedAt) > oneMinuteAgo
+    );
+
+    if (isDuplicate) {
+      return res.status(200).json({
+        success: true,
+        message: "Riwayat sudah ada (duplikat diabaikan).",
+        data: { historyItem: null },
+      });
+    }
+    // ─────────────────────────────────────────────────────────
+
     user.history.push({
       recipeId,
       recipeName: recipe.recipeName,
       cooked: true,
-      cookedAt: new Date(),   // ← INI yang penting
+      cookedAt: new Date(),
     });
     await user.save();
 
