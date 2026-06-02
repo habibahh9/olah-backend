@@ -286,37 +286,54 @@ const getStats = async (req, res) => {
     const savedPct    = total > 0 ? Math.round((savedCount / total) * 100) : 0;
     const wastedPct   = total > 0 ? Math.round((wastedCount / total) * 100) : 0;
 
-    // Bahan aktif hampir kadaluarsa (≤ 5 hari)
-    const expiringSoon = allItems
-      .filter((i) => {
-        if (i.status !== "active" || !i.expiryDate) return false;
+    // ── Kategorikan semua bahan aktif ────────────────────────────────────
+    const expired    = [];
+    const nearExpiry = [];  // 1–7 hari
+    const stillFresh = [];  // > 7 hari atau tanpa tanggal
+
+    allItems
+      .filter((i) => i.status === "active")
+      .forEach((i) => {
         const daysLeft = getDaysLeft(i.expiryDate);
-        return daysLeft !== null && daysLeft <= 5;
-      })
-      .map((i) => {
-        const daysLeft = getDaysLeft(i.expiryDate);
-        return {
+        const entry = {
           id:         i._id,
           name:       i.name,
           daysLeft,
-          days:       daysLeft === 0 ? "Hari Ini!"
-                      : daysLeft < 0 ? "Sudah Expired"
-                      : `${daysLeft} Hari Lagi`,
           expiryDate: i.expiryDate,
           quantity:   i.quantity,
           unit:       i.unit,
         };
-      })
-      .sort((a, b) => a.daysLeft - b.daysLeft);
+
+        if (daysLeft === null) {
+          stillFresh.push(entry);
+        } else if (daysLeft <= 0) {
+          expired.push(entry);
+        } else if (daysLeft <= 5) {
+          nearExpiry.push(entry);
+        } else {
+          stillFresh.push(entry);
+        }
+      });
+
+    const sortByDays = (a, b) => (a.daysLeft ?? 999) - (b.daysLeft ?? 999);
+    expired.sort(sortByDays);
+    nearExpiry.sort(sortByDays);
+    stillFresh.sort(sortByDays);
 
     res.status(200).json({
-      success: true,
-      data: {
-        chart:        { saved: savedCount, wasted: wastedCount, savedPct, wastedPct, total },
-        expiringSoon,
-        summary:      { active: activeCount, used: savedCount, expired: wastedCount },
-      },
-    });
+        success: true,
+        data: {
+          chart:       { saved: savedCount, wasted: wastedCount, savedPct, wastedPct, total },
+          categories: {
+            expired,
+            nearExpiry,
+            stillFresh,
+          },
+          // tetap kirim expiringSoon untuk kompatibilitas bagian lain
+          expiringSoon: [...expired, ...nearExpiry].sort(sortByDays),
+          summary:     { active: activeCount, used: savedCount, expired: wastedCount },
+        },
+      });
   } catch (error) {
     console.error("getStats error:", error);
     res.status(500).json({ success: false, message: "Gagal mengambil statistik pantry." });
