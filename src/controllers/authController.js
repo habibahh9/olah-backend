@@ -93,9 +93,9 @@ const login = async (req, res) => {
     );
 
     if (!user) {
-      return res.status(401).json({
+      return res.status(404).json({
         success: false,
-        message: "Email atau password salah.",
+        message: "Email belum terdaftar.",
       });
     }
 
