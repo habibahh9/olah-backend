@@ -288,8 +288,7 @@ const getStats = async (req, res) => {
 
     // ── Kategorikan semua bahan aktif ────────────────────────────────────
     const expired    = [];
-    const nearExpiry = [];  // 1–7 hari
-    const stillFresh = [];  // > 7 hari atau tanpa tanggal
+    const nearExpiry = [];
 
     allItems
       .filter((i) => i.status === "active")
@@ -304,21 +303,18 @@ const getStats = async (req, res) => {
           unit:       i.unit,
         };
 
-        if (daysLeft === null) {
-          stillFresh.push(entry);
+        if (daysLeft === null || daysLeft > 7) {
+          return; // skip — tidak ditampilkan
         } else if (daysLeft <= 0) {
           expired.push(entry);
-        } else if (daysLeft <= 5) {
-          nearExpiry.push(entry);
         } else {
-          stillFresh.push(entry);
+          nearExpiry.push(entry);
         }
       });
 
     const sortByDays = (a, b) => (a.daysLeft ?? 999) - (b.daysLeft ?? 999);
     expired.sort(sortByDays);
     nearExpiry.sort(sortByDays);
-    stillFresh.sort(sortByDays);
 
     res.status(200).json({
         success: true,
@@ -327,7 +323,6 @@ const getStats = async (req, res) => {
           categories: {
             expired,
             nearExpiry,
-            stillFresh,
           },
           // tetap kirim expiringSoon untuk kompatibilitas bagian lain
           expiringSoon: [...expired, ...nearExpiry].sort(sortByDays),
